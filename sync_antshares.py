@@ -92,12 +92,13 @@ def sync():
 if __name__ == "__main__":
     try:
         parser = argparse.ArgumentParser()
+        parser.add_argument("-d", "--db", default='antshares', help="verify database name, default antshares")
         parser.add_argument("-n", "--node", default='http://127.0.0.1:20332', help="remote node to sync blockchain data,default http://127.0.0.1:20332")
         parser.add_argument("-m", "--mongodb", default='127.0.0.1:27017', help="mongodb for store data,default 127.0.0.1:27017")
         args = parser.parse_args()
         RN = RemoteNode(args.node)
         MC = MongoClient('mongodb://' + args.mongodb + '/')
-        DB = MC.antshares
+        DB = MC[args.db]
         sync()
     except Exception as e:
         print e

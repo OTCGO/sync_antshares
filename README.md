@@ -26,11 +26,11 @@ python sync_antshares.py
 从 本地节点 同步 主网 数据至 本地MongoDB
 
 ```
-python sync_antshares.py -n http://127.0.0.1:10332
+python sync_antshares.py -d mainnet -n http://127.0.0.1:10332
 ```
 
 从 远程节点 同步 测试网 数据至 远程MongoDB
 
 ```
-python sync_antshares.py -n http://seed5.antshares.org:20332 -m 8.8.8.8:27017
+python sync_antshares.py -d testnet -n http://seed5.antshares.org:20332 -m 8.8.8.8:27017
 ```
