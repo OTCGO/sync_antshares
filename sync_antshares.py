@@ -54,30 +54,37 @@ def sync_address(tr):
         DB.addresses.update({'_id':vo['address']},mongo_address,True,False)
         print '+++++',vo['address'],vo['asset'],mongo_address['balances'][vo['asset']],'+++++'
 
+def sync_transaction(tr):
+    _id = tr['txid']
+    tr['_id'] = _id
+    DB.transactions.update({'_id':_id},tr,True,False)
+
 def sync_block(num):
     start_time = time.time()
-    last_block = RN.getBlock(num)
-    while not last_block.has_key('result'):
-        time.sleep(SYNC_TIME_GAP)
-        last_block = RN.getBlock(num)
+    while True:
+        current_block = RN.getBlock(num)
+        if not current_block.has_key('result'):
+            time.sleep(SYNC_TIME_GAP)
+        else:
+            break
     mongo_block = {}
     mongo_block['_id'] = num
-    mongo_block['previousblockhash'] = last_block['result']['previousblockhash']
-    mongo_block['height'] = last_block['result']['height']
-    mongo_block['hash'] = last_block['result']['hash']
-    mongo_block['time'] = last_block['result']['time']
-    trs = last_block['result']['tx']
+    mongo_block['previousblockhash'] = current_block['result']['previousblockhash']
+    mongo_block['height'] = current_block['result']['height']
+    mongo_block['hash'] = current_block['result']['hash']
+    mongo_block['time'] = current_block['result']['time']
+    trs = current_block['result']['tx']
+    mongo_block['tx'] = []
+    #sync address and transaction
     for i in get_fixed_slice(trs, GEVENT_MAX):
         threads = []
         for j in i:
+            mongo_block['tx'].append(j['txid'])
             threads.append(gevent.spawn(sync_address, j))
+            threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
-    for tr in trs:
-        tr['_id'] = tr['txid']
-    mongo_block['tx'] = [t['txid'] for t in trs]
-    DB.transactions.insert_many(trs) 
-    sync_height = DB.blocks.insert_one(mongo_block).inserted_id
-    print '->', sync_height, 'at %f seconds' % (time.time() - start_time)
+    DB.blocks.update({'_id':num},mongo_block,upsert=True)
+    print '->', num, 'at %f seconds' % (time.time() - start_time)
 
 def sync():
     while True:
