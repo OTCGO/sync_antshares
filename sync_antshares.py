@@ -80,12 +80,14 @@ def sync_block(num):
     mongo_block['time'] = current_block['result']['time']
     trs = current_block['result']['tx']
     mongo_block['tx'] = []
-    #sync address and transaction
+    #sync address
+    for tr in trs:
+        sync_address(tr)
+    #sync transactions
     for i in get_fixed_slice(trs, GEVENT_MAX):
         threads = []
         for j in i:
             mongo_block['tx'].append(j['txid'])
-            threads.append(gevent.spawn(sync_address, j))
             threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
     try:
