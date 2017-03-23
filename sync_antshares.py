@@ -7,10 +7,12 @@ import argparse
 import gevent.monkey
 gevent.monkey.patch_all()
 from AntShares.Network.RemoteNode import RemoteNode
+from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
 from decimal import Decimal as D
 import gevent
 import time
+import sys
 GEVENT_MAX = 100
 SYNC_TIME_GAP = 0.05
 
@@ -32,7 +34,7 @@ def sync_address(tr):
                 mongo_address['utxo'][asset].remove(ux)
                 mongo_address['balances'][asset] = str(D(mongo_address['balances'][asset])-D(ux['value']))
                 DB.addresses.update({'_id':address},mongo_address)
-                print '-----',address,asset,mongo_address['balances'][asset],'-----'
+                print '-'*5,address,asset,mongo_address['balances'][asset],'-'*5
                 break
     for i in xrange(len(tr['vout'])):
         vo = tr['vout'][i]
@@ -52,12 +54,15 @@ def sync_address(tr):
             mongo_address['utxo'][vo['asset']] = []
         mongo_address['utxo'][vo['asset']].append(append_element)
         DB.addresses.update({'_id':vo['address']},mongo_address,True,False)
-        print '+++++',vo['address'],vo['asset'],mongo_address['balances'][vo['asset']],'+++++'
+        print '+'*5,vo['address'],vo['asset'],mongo_address['balances'][vo['asset']],'+'*5
 
 def sync_transaction(tr):
     _id = tr['txid']
     tr['_id'] = _id
-    DB.transactions.update({'_id':_id},tr,True,False)
+    try:
+        DB.transactions.insert_one(tr)
+    except DuplicateKeyError:
+        print 'duplicate transaction %s' % _id
 
 def sync_block(num):
     start_time = time.time()
@@ -83,8 +88,11 @@ def sync_block(num):
             threads.append(gevent.spawn(sync_address, j))
             threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
-    DB.blocks.update({'_id':num},mongo_block,upsert=True)
-    print '->', num, 'at %f seconds' % (time.time() - start_time)
+    try:
+        result = DB.blocks.insert_one({'_id':num},mongo_block)
+        print '->', num, 'at %f seconds' % (time.time() - start_time)
+    except DuplicateKeyError:
+        print 'duplicate block %s' % num
 
 def sync():
     while True:
@@ -109,3 +117,4 @@ if __name__ == "__main__":
         sync()
     except Exception as e:
         print e
+        sys.exit()
