@@ -13,7 +13,6 @@ class MainHandler(tornado.web.RequestHandler):
 
 class BrowserHandler(tornado.web.RequestHandler):
     def get(self,xid):
-        print type(xid),xid
         print '%s %s' % (datetime.now(),self.request.path),
         db,table = self.request.path.split('/')[1:3]
         if 'block' == table:
