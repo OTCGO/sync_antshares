@@ -75,7 +75,7 @@ def sync_block(num):
     mongo_block = {}
     mongo_block['_id'] = num
     mongo_block['previousblockhash'] = current_block['result']['previousblockhash']
-    mongo_block['height'] = current_block['result']['height']
+    mongo_block['index'] = current_block['result']['index']
     mongo_block['hash'] = current_block['result']['hash']
     mongo_block['time'] = current_block['result']['time']
     trs = current_block['result']['tx']
