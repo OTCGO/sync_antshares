@@ -9,7 +9,14 @@ MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write("Hello, AntShares!")
+        self.write("""<h1>Simple AntShares BlockChain Browser!</h1>
+                    <ul>
+                        <li>/{net}/height</li>
+                        <li>/{net}/block/{block}</li>
+                        <li>/{net}/transaction/{txid}</li>
+                        <li>/{net}/address/{address}</li>
+                    </ul>
+                    """)
 
 class BrowserHandler(tornado.web.RequestHandler):
     def get(self,xid):
@@ -46,5 +53,5 @@ application = tornado.web.Application([
         ])
 
 if __name__ == "__main__":
-    application.listen(9999)
+    application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
