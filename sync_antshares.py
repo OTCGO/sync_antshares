@@ -91,7 +91,7 @@ def sync_block(num):
             threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
     try:
-        result = DB.blocks.insert_one({'_id':num},mongo_block)
+        result = DB.blocks.insert_one(mongo_block)
         print '->', num, 'at %f seconds' % (time.time() - start_time)
     except DuplicateKeyError:
         print 'duplicate block %s' % num
