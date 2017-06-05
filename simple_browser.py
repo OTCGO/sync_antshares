@@ -1,3 +1,4 @@
+#coding:utf8
 import tornado.ioloop
 import tornado.web
 from pymongo import MongoClient
@@ -20,6 +21,13 @@ class MainHandler(tornado.web.RequestHandler):
                         <li><strong>GET</strong> /{net}/address/{address}</li>
                         <li><strong>POST</strong> /{net}/transfer</li>
                         <li><strong>POST</strong> /{net}/broadcast</li>
+                    </ul>
+                    <br>
+                    <br>
+                    <h2>Links</h2>
+                    <ul>
+                        <li><a href='http://note.youdao.com/noteshare?id=b60cc93fa8e8804394ade199c52d6274'>如何转账</a></li>
+                        <li><a href='https://github.com/OTCGO/sync_antshares'>源代码</a></li>
                     </ul>
                     """)
 
