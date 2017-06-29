@@ -21,6 +21,7 @@ class MainHandler(tornado.web.RequestHandler):
                         <li><strong>GET</strong> /{net}/claim/{address}</li>
                         <li><strong>GET</strong> /{net}/address/{address}</li>
                         <li><strong>POST</strong> /{net}/transfer</li>
+                        <li><strong>POST</strong> /{net}/gas</li>
                         <li><strong>POST</strong> /{net}/broadcast</li>
                     </ul>
                     <br>
@@ -28,6 +29,7 @@ class MainHandler(tornado.web.RequestHandler):
                     <h2>Links</h2>
                     <ul>
                         <li><a href='http://note.youdao.com/noteshare?id=b60cc93fa8e8804394ade199c52d6274'>如何转账</a></li>
+                        <li><a href='http://note.youdao.com/noteshare?id=c2b09b4fa26d59898a0f968ccd1652a0'>如何提取ANC/NeoGas</a></li>
                         <li><a href='https://github.com/OTCGO/sync_antshares'>源代码</a></li>
                     </ul>
                     """)
