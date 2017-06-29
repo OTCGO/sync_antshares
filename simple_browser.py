@@ -18,6 +18,7 @@ class MainHandler(tornado.web.RequestHandler):
                         <li><strong>GET</strong> /{net}/height</li>
                         <li><strong>GET</strong> /{net}/block/{block}</li>
                         <li><strong>GET</strong> /{net}/transaction/{txid}</li>
+                        <li><strong>GET</strong> /{net}/claim/{address}</li>
                         <li><strong>GET</strong> /{net}/address/{address}</li>
                         <li><strong>POST</strong> /{net}/transfer</li>
                         <li><strong>POST</strong> /{net}/broadcast</li>
@@ -107,8 +108,10 @@ class BroadcastHandler(tornado.web.RequestHandler):
 
 application = tornado.web.Application([
         (r'/', MainHandler),
-        (r'/testnet/address/(\w{34})', BrowserHandler),
-        (r'/mainnet/address/(\w{34})', BrowserHandler),
+        (r'/testnet/address/(\w{33,34})', BrowserHandler),
+        (r'/mainnet/address/(\w{33,34})', BrowserHandler),
+        (r'/testnet/claim/(\w{33,34})', BrowserHandler),
+        (r'/mainnet/claim/(\w{33,34})', BrowserHandler),
         (r'/testnet/transaction/(\w{64})', BrowserHandler),
         (r'/mainnet/transaction/(\w{64})', BrowserHandler),
         (r'/testnet/block/(\d{1,10})', BrowserHandler),
