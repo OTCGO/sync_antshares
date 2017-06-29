@@ -38,8 +38,12 @@ class BrowserHandler(tornado.web.RequestHandler):
         db,table = self.request.path.split('/')[1:3]
         if 'block' == table:
             xid = int(xid)
-        table = MC[db][table+'s'] if table!='address' else MC[db][table+'es']
-        result = table.find_one({'_id':xid})
+        dbTable = MC[db][table+'s'] if table!='address' else MC[db][table+'es']
+        result = dbTable.find_one({'_id':xid})
+        if result and 'claim' == table:
+            db = MC[db]
+            height = db.blocks.count()
+            result = WT.compute_gas(height,result,db)
         if result:
             print 'True'
             self.write(json.dumps(result))
@@ -91,9 +95,9 @@ class GasHandler(tornado.web.RequestHandler):
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
         publicKey   = self.get_argument('publicKey')
-        address = WT.pubkey_to_compress(publicKey)
-        claims = db.find_one({'_id':address})
-        trans,msg = WT.claim_gas(address,h,claims)
+        address = WT.pubkey_to_address(publicKey)
+        claims = db.claims.find_one({'_id':address})
+        trans,msg = WT.claim_gas(address,h,claims,db)
         if trans:
             print 'True'
             self.write(json.dumps({'result':True, 'transaction':trans}))

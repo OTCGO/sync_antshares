@@ -4,6 +4,7 @@ import hashlib
 import binascii
 from base58 import b58decode
 from decimal import Decimal as D
+from AntShares.Fixed8 import Fixed8
 from AntShares.Helper import big_or_little
 from AntShares.Network.RemoteNode import RemoteNode
 from AntShares.IO.MemoryStream import MemoryStream
@@ -11,7 +12,7 @@ from AntShares.IO.BinaryWriter import BinaryWriter
 from AntShares.Core.Transaction import Transaction
 from AntShares.Core.TransactionInput import TransactionInput
 from AntShares.Core.TransactionOutput import TransactionOutput
-from AntShares.Cryptography.Helper import get_privkey_format,decode_privkey,encode_pubkey,fast_multiply,G,redeem_to_scripthash,bin_dbl_sha256
+from AntShares.Cryptography.Helper import get_privkey_format,decode_privkey,encode_pubkey,fast_multiply,G,redeem_to_scripthash,bin_dbl_sha256,pubkey_to_redeem,redeem_to_scripthash,scripthash_to_address
 from config import RPC_NODE,SERVER,PORT
 
 
@@ -92,6 +93,14 @@ class WalletTool:
         prefix = '03' if int('0x'+y[-1],16)%2 else '02'
         return prefix + x
 
+    @classmethod
+    def pubkey_to_address(cls,pubkey):
+        compressPubkey = cls.pubkey_to_compress(pubkey)
+        redeem = pubkey_to_redeem(compressPubkey)
+        scripthash = redeem_to_scripthash(redeem)
+        address = scripthash_to_address(scripthash)
+        return address
+
     @staticmethod
     def private_to_hex_publickey(prik):
         '''私钥转换成公钥(完整版)'''
@@ -161,7 +170,11 @@ class WalletTool:
         return big_or_little(aoLenHex)
 
     @staticmethod
-    def compute_gas(height,claims):
+    def compute_gas(height,claims,db):
+        if not claims:
+            claims = {}
+        if claims.has_key('_id'):
+            del claims['_id']
         decrementInterval = 2000000
         generationAmount = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] 
         enable = disable = D('0')
@@ -190,21 +203,20 @@ class WalletTool:
                 assert ustart == uend,'error X'
                 amount += (iend - istart) * generationAmount[ustart]
             if v['startIndex'] > 0:
-                amount += D(self.block(v['stopIndex']-1)['sys_fee']) - D(self.block(v['startIndex'])['sys_fee'])
+                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee']) - D(db.blocks.find_one({'_id':v['startIndex']})['sys_fee'])
             else:
-                amount += D(self.block(v['stopIndex']-1)['sys_fee'])
+                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee'])
             if v['status']:
                 enable += D(v['value']) / 100000000 * amount
             else:
                 disable += D(v['value']) / 100000000 * amount
         base = {'enable':str(enable),'disable':str(disable)}
-        base['claims'] = [i.split('_') for i in result.keys() if result[i]['stopHash']]
+        base['claims'] = [i.split('_') for i in claims.keys() if claims[i]['stopHash']]
         return base
 
     @classmethod
-    def claim_gas(cls,address,height,claims):
-        del claims['_id']
-        details = cls.compute_gas(height,claims)
+    def claim_gas(cls,address,height,claims,db):
+        details = cls.compute_gas(height,claims,db)
         if details['enable']:
             tx = '0200' + cls.get_length_for_tx(details['claims'])
             for c in details['claims']:
