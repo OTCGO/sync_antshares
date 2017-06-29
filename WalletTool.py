@@ -152,3 +152,69 @@ class WalletTool:
         except Exception as e:
             #print '*'*5,'Exception','*'*5,e
             return False,'Exception:%s' % e
+
+    @staticmethod
+    def get_length_for_tx(ins):
+        assert len(ins)<65536,'Too much items'
+        aoLenHex = hex(len(ins))[2:]
+        aoLenHex = '0' + aoLenHex if len(aoLenHex)%2 else aoLenHex
+        return big_or_little(aoLenHex)
+
+    @staticmethod
+    def compute_gas(height,claims):
+        decrementInterval = 2000000
+        generationAmount = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] 
+        enable = disable = D('0')
+        for k,v in claims.items():
+            if 0 == v['stopIndex']:
+                v['stopIndex'] = height
+                v['status'] = False
+            else:
+                v['status'] = True
+            amount = D('0')
+            ustart = v['startIndex'] / decrementInterval
+            if ustart < len(generationAmount):
+                istart = v['startIndex'] % decrementInterval
+                uend =   v['stopIndex'] / decrementInterval
+                iend =   v['stopIndex'] % decrementInterval
+                if uend >= len(generationAmount):
+                    uend = len(generationAmount)
+                    iend = 0
+                if 0 == iend:
+                    uend -= 1
+                    iend = decrementInterval
+                while ustart < uend:
+                    amount += (decrementInterval - istart) * generationAmount[ustart]
+                    ustart += 1
+                    istart = 0
+                assert ustart == uend,'error X'
+                amount += (iend - istart) * generationAmount[ustart]
+            if v['startIndex'] > 0:
+                amount += D(self.block(v['stopIndex']-1)['sys_fee']) - D(self.block(v['startIndex'])['sys_fee'])
+            else:
+                amount += D(self.block(v['stopIndex']-1)['sys_fee'])
+            if v['status']:
+                enable += D(v['value']) / 100000000 * amount
+            else:
+                disable += D(v['value']) / 100000000 * amount
+        base = {'enable':str(enable),'disable':str(disable)}
+        base['claims'] = [i.split('_') for i in result.keys() if result[i]['stopHash']]
+        return base
+
+    @classmethod
+    def claim_gas(cls,address,height,claims):
+        del claims['_id']
+        details = cls.compute_gas(height,claims)
+        if details['enable']:
+            tx = '0200' + cls.get_length_for_tx(details['claims'])
+            for c in details['claims']:
+                tx += big_or_little(c[0])
+                prevIndex = cls.get_length_for_tx(int(c[1])*[0])
+                if len(prevIndex) < 4:
+                    prevIndex += '00'
+                tx += prevIndex
+            tx += '000001e72d286979ee6cb1b7e65dfddfb2e384100b8d148e7758de42e4168b71792c60'
+            tx += Fixed8(details['enable']).getData()
+            tx += cls.address_to_scripthash(address)
+            return tx,cls.compute_txid(tx)
+        return False,'No Gas'

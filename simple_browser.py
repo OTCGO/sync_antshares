@@ -85,6 +85,22 @@ class TransferHandler(tornado.web.RequestHandler):
                     print 'True'
                     self.write(json.dumps({'result':True, 'transaction':trans}))
 
+class GasHandler(tornado.web.RequestHandler):
+    def post(self):
+        print '%s %s' % (datetime.now(),self.request.path),
+        db = MC[self.request.path.split('/')[1]]
+        h = db.blocks.count()
+        publicKey   = self.get_argument('publicKey')
+        address = WT.pubkey_to_compress(publicKey)
+        claims = db.find_one({'_id':address})
+        trans,msg = WT.claim_gas(address,h,claims)
+        if trans:
+            print 'True'
+            self.write(json.dumps({'result':True, 'transaction':trans}))
+        else:
+            print 'False'
+            self.write(json.dumps({'result':True, 'error':msg}))
+
 class BroadcastHandler(tornado.web.RequestHandler):
     def post(self):
         print '%s %s' % (datetime.now(),self.request.path),
@@ -120,6 +136,8 @@ application = tornado.web.Application([
         (r'/mainnet/height', HeightHandler),
         (r'/testnet/transfer', TransferHandler),
         (r'/mainnet/transfer', TransferHandler),
+        (r'/testnet/gas', GasHandler),
+        (r'/mainnet/gas', GasHandler),
         (r'/testnet/broadcast', BroadcastHandler),
         (r'/mainnet/broadcast', BroadcastHandler),
         ])
