@@ -11,11 +11,13 @@ from config import PORT
 MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
 
 
-class MainHandler(tornado.web.RequestHandler):
+class CORSHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+class MainHandler(CORSHandler):
     def get(self):
         self.write("""<h1>Simple AntShares BlockChain Browser!</h1>
                     <ul>
@@ -38,11 +40,7 @@ class MainHandler(tornado.web.RequestHandler):
                     </ul>
                     """)
 
-class BrowserHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+class BrowserHandler(CORSHandler):
     def get(self,xid):
         print '%s %s' % (datetime.now(),self.request.path),
         db,table = self.request.path.split('/')[1:3]
@@ -61,22 +59,14 @@ class BrowserHandler(tornado.web.RequestHandler):
             print 'False'
             self.write(json.dumps({}))
 
-class HeightHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+class HeightHandler(CORSHandler):
     def get(self):
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
         print '%s %s' % (datetime.now(),self.request.path),'True'
         self.write(json.dumps({'height':h}))
 
-class TransferHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+class TransferHandler(CORSHandler):
     def post(self):
         print '%s %s' % (datetime.now(),self.request.path),
         db =        self.request.path.split('/')[1]
@@ -107,11 +97,7 @@ class TransferHandler(tornado.web.RequestHandler):
                     print 'True'
                     self.write(json.dumps({'result':True, 'transaction':trans}))
 
-class GasHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+class GasHandler(CORSHandler):
     def post(self):
         print '%s %s' % (datetime.now(),self.request.path),
         db = MC[self.request.path.split('/')[1]]
@@ -127,11 +113,7 @@ class GasHandler(tornado.web.RequestHandler):
             print 'False'
             self.write(json.dumps({'result':True, 'error':msg}))
 
-class BroadcastHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+class BroadcastHandler(CORSHandler):
     def post(self):
         print '%s %s' % (datetime.now(),self.request.path),
         net = self.request.path.split('/')[1]
