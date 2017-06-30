@@ -3,7 +3,7 @@ import ecdsa
 import hashlib
 import binascii
 from base58 import b58decode
-from decimal import Decimal as D,ROUND_DOWN
+from decimal import Decimal as D
 from AntShares.Fixed8 import Fixed8
 from AntShares.Helper import big_or_little
 from AntShares.Network.RemoteNode import RemoteNode
@@ -203,9 +203,9 @@ class WalletTool:
                 assert ustart == uend,'error X'
                 amount += (iend - istart) * generationAmount[ustart]
             if v['startIndex'] > 0:
-                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee']).quantize(D('1'),rounding=ROUND_DOWN) - D(db.blocks.find_one({'_id':v['startIndex']})['sys_fee']).quantize(D('1'),rounding=ROUND_DOWN)
+                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee']) - D(db.blocks.find_one({'_id':v['startIndex']})['sys_fee'])
             else:
-                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee']).quantize(D('1'),rounding=ROUND_DOWN)
+                amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee'])
             if v['status']:
                 enable += D(v['value']) / 100000000 * amount
             else:

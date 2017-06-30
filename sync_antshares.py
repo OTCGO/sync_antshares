@@ -11,7 +11,7 @@ from AntShares.Network.RemoteNode import RemoteNode
 from AntShares.Cryptography.Helper import pubkey_to_address,scripthash_to_address,redeem_to_scripthash
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
-from decimal import Decimal as D
+from decimal import Decimal as D,ROUND_DOWN
 import datetime
 import gevent
 import time
@@ -153,7 +153,7 @@ def sync_block(num):
     for i in get_fixed_slice(trs, GEVENT_MAX):
         threads = []
         for j in i:
-            sys_fee += D(j['sys_fee'])
+            sys_fee += D(j['sys_fee']).quantize(D('1'),rounding=ROUND_DOWN)
             mongo_block['tx'].append(j['txid'])
             threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
