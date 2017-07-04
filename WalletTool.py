@@ -177,7 +177,7 @@ class WalletTool:
             del claims['_id']
         decrementInterval = 2000000
         generationAmount = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] 
-        enable = disable = D('0')
+        available = unavailable = D('0')
         for k,v in claims.items():
             if 0 == v['stopIndex']:
                 v['stopIndex'] = height
@@ -207,17 +207,17 @@ class WalletTool:
             else:
                 amount += D(db.blocks.find_one({'_id':v['stopIndex']-1})['sys_fee'])
             if v['status']:
-                enable += D(v['value']) / 100000000 * amount
+                available += D(v['value']) / 100000000 * amount
             else:
-                disable += D(v['value']) / 100000000 * amount
-        base = {'enable':str(enable),'disable':str(disable)}
+                unavailable += D(v['value']) / 100000000 * amount
+        base = {'available':str(available),'unavailable':str(unavailable)}
         base['claims'] = [i.split('_') for i in claims.keys() if claims[i]['stopHash']]
         return base
 
     @classmethod
     def claim_gas(cls,address,height,claims,db):
         details = cls.compute_gas(height,claims,db)
-        if details['enable']:
+        if D(details['available']):
             tx = '0200' + cls.get_length_for_tx(details['claims'])
             for c in details['claims']:
                 tx += big_or_little(c[0])
@@ -226,7 +226,7 @@ class WalletTool:
                     prevIndex += '00'
                 tx += prevIndex
             tx += '000001e72d286979ee6cb1b7e65dfddfb2e384100b8d148e7758de42e4168b71792c60'
-            tx += Fixed8(details['enable']).getData()
+            tx += Fixed8(details['available']).getData()
             tx += cls.address_to_scripthash(address)
             return tx,cls.compute_txid(tx)
         return False,'No Gas'

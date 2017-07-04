@@ -95,6 +95,8 @@ def sync_address(tr):
             if prevHash == ux['prevHash'] and prevIndex == ux['prevIndex']:
                 mongo_address['utxo'][asset].remove(ux)
                 mongo_address['balances'][asset] = str(D(mongo_address['balances'][asset])-D(ux['value']))
+                if '0E-8' == mongo_address['balances'][asset]:
+                    mongo_address['balances'][asset] = '0'
                 DB.addresses.update({'_id':address},mongo_address)
                 print '-'*5,address,asset,mongo_address['balances'][asset],'-'*5
                 break
