@@ -12,6 +12,7 @@ from AntShares.Cryptography.Helper import pubkey_to_address,scripthash_to_addres
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
 from decimal import Decimal as D,ROUND_DOWN
+from .converttool import sci_to_str
 import datetime
 import gevent
 import time
@@ -94,9 +95,7 @@ def sync_address(tr):
         for ux in mongo_address['utxo'][asset]:
             if prevHash == ux['prevHash'] and prevIndex == ux['prevIndex']:
                 mongo_address['utxo'][asset].remove(ux)
-                mongo_address['balances'][asset] = str(D(mongo_address['balances'][asset])-D(ux['value']))
-                if '0E-8' == mongo_address['balances'][asset]:
-                    mongo_address['balances'][asset] = '0'
+                mongo_address['balances'][asset] = sci_to_str(str(D(mongo_address['balances'][asset])-D(ux['value'])))
                 DB.addresses.update({'_id':address},mongo_address)
                 print '-'*5,address,asset,mongo_address['balances'][asset],'-'*5
                 break

@@ -13,6 +13,7 @@ from AntShares.Core.Transaction import Transaction
 from AntShares.Core.TransactionInput import TransactionInput
 from AntShares.Core.TransactionOutput import TransactionOutput
 from AntShares.Cryptography.Helper import get_privkey_format,decode_privkey,encode_pubkey,fast_multiply,G,redeem_to_scripthash,bin_dbl_sha256,pubkey_to_redeem,redeem_to_scripthash,scripthash_to_address
+from .converttool import sci_to_str
 from config import RPC_NODE,SERVER,PORT
 
 
@@ -210,7 +211,7 @@ class WalletTool:
                 available += D(v['value']) / 100000000 * amount
             else:
                 unavailable += D(v['value']) / 100000000 * amount
-        base = {'available':str(available),'unavailable':str(unavailable)}
+        base = {'available':sci_to_str(str(available)),'unavailable':sci_to_str(str(unavailable))}
         base['claims'] = [i.split('_') for i in claims.keys() if claims[i]['stopHash']]
         return base
 
