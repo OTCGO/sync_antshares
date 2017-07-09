@@ -12,7 +12,7 @@ from AntShares.Cryptography.Helper import pubkey_to_address,scripthash_to_addres
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
 from decimal import Decimal as D,ROUND_DOWN
-from .converttool import sci_to_str
+from converttool import sci_to_str
 import datetime
 import gevent
 import time

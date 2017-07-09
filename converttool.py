@@ -1,6 +1,6 @@
-i#coding:utf8
+#coding:utf8
 
-sci_to_str(sciStr):
+def sci_to_str(sciStr):
     '''科学计数法转换成字符串'''
     assert type('str')==type(sciStr),'invalid format'
     if 'E' not in sciStr:
