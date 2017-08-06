@@ -1,5 +1,6 @@
 #coding:utf8
 import ecdsa
+import pycoin
 import hashlib
 import binascii
 from base58 import b58decode
@@ -18,6 +19,22 @@ from config import RPC_NODE,SERVER,PORT
 
 
 class WalletTool:
+    @staticmethod
+    def uncompress_pubkey(cpk):
+        '''将压缩版公钥转换为完整版公钥'''
+        from pycoin.ecdsa.numbertheory import modular_sqrt
+        p = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
+        a = -3
+        b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
+        prefix = cpk[:2]
+        x = int(cpk[2:],16)
+        y_squared = (x**3 + a*x + b)%p
+        y = modular_sqrt(y_squared, p)
+        y_hex = '%x' % y
+        if (1==int(y_hex[-1],16)%2 and '02' == prefix) or (0==int(y_hex[-1],16)%2 and '03' == prefix):
+            y = p - y
+        return '04%x%064x' % (x,y)
+
     @staticmethod
     def address_to_scripthash(address):
         return binascii.hexlify(b58decode(address)[1:-4])
@@ -96,7 +113,11 @@ class WalletTool:
 
     @classmethod
     def pubkey_to_address(cls,pubkey):
-        compressPubkey = cls.pubkey_to_compress(pubkey)
+        if 130 == len(pubkey):
+            compressPubkey = cls.pubkey_to_compress(pubkey)
+        else:
+            assert 66==len(pubkey),'Wrong PublicKey Length'
+            compressPubkey = pubkey
         redeem = pubkey_to_redeem(compressPubkey)
         scripthash = redeem_to_scripthash(redeem)
         address = scripthash_to_address(scripthash)

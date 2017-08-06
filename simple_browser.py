@@ -1,12 +1,18 @@
 #coding:utf8
 import tornado.ioloop
 import tornado.web
+import tornado.httpserver
 from pymongo import MongoClient
-import json
 from datetime import datetime
 from decimal import Decimal as D
 from WalletTool import WalletTool as WT
 from config import PORT
+import os
+from functools import partial
+from fabric.api import local
+import argparse
+import json
+from AntShares.Network.RemoteNode import RemoteNode as RN
 
 MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
 
@@ -120,11 +126,11 @@ class BroadcastHandler(CORSHandler):
         transaction = self.get_argument('transaction')
         signature   = self.get_argument('signature')
         publicKey   = self.get_argument('publicKey')
-        if not WT.verify(publicKey, transaction, signature):
+        if not WT.verify(WT.uncompress_pubkey(publicKey), transaction, signature):
             msg = 'invalid signature'
             print 'False',msg
             self.write(json.dumps({'result':False,'error':msg}))
-        regtx = transaction + '014140' + signature + '2321' + WT.pubkey_to_compress(publicKey) + 'ac'
+        regtx = transaction + '014140' + signature + '2321' + publicKey + 'ac'
         result, msg = WT.send_transaction_to_node(regtx, transaction, net)
         if result:
             print 'True'
@@ -154,6 +160,33 @@ application = tornado.web.Application([
         (r'/mainnet/broadcast', BroadcastHandler),
         ])
 
+def check(monitor = 'both'):
+    dit = {}
+    if 'testnet' == monitor:
+        dit[monitor] = 20332
+    elif 'mainnet' == monitor:
+        dit[monitor] = 10332
+    elif 'both' == monitor:
+        dit['testnet'] = 20332
+        dit['mainnet'] = 10332
+    for k,v in dit.items():
+        h = MC[k].blocks.count()
+        rn = RN('http://seed1.neo.org:%s' % v)
+        rh = rn.getBlockCount()
+        print '%s --> %s vs %s' % (datetime.now(), h,rh)
+        if rh - h >= 2:
+            print 'will restart %s' % k
+            local('supervisorctl restart %s_node' % k)
+
+
 if __name__ == "__main__":
-    application.listen(PORT)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--monitor", default='none', help="monitor which net,eg:mainnet,testnet,both,default none")
+    args = parser.parse_args()
+    server = tornado.httpserver.HTTPServer(application, ssl_options={
+        "certfile": os.path.join(os.path.abspath("."), "HTTPS/https.pem"),
+        "keyfile": os.path.join(os.path.abspath("."), "HTTPS/https.key"),
+        })
+    server.listen(PORT)
+    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 500000).start()
     tornado.ioloop.IOLoop.instance().start()

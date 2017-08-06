@@ -1,3 +1,3 @@
-PORT = 80 
+PORT = 443
 SERVER = '127.0.0.1'
 RPC_NODE = '127.0.0.1'
