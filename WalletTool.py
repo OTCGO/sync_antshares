@@ -20,6 +20,22 @@ from config import RPC_NODE,SERVER,PORT
 
 class WalletTool:
     @staticmethod
+    def get_last_height(net):
+        assert net in ['testnet','mainnet'],'Wrong Net'
+        netPortDit = {'testnet':'20332','mainnet':'10332'}
+        seeds = ['seed'+'%s' % i for i in range(1,6)]
+        heights = []
+        for seed in seeds:
+            rn = RemoteNode('http://'+seed+'.neo.org:'+netPortDit[net])
+            try:
+                height = rn.getBlockCount()
+            except:
+                height = 0
+            heights.append(height)
+        print 'heights:%s' % heights
+        return max(heights)
+
+    @staticmethod
     def uncompress_pubkey(cpk):
         '''将压缩版公钥转换为完整版公钥'''
         from pycoin.ecdsa.numbertheory import modular_sqrt

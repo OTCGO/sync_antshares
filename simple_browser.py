@@ -12,7 +12,6 @@ from functools import partial
 from fabric.api import local
 import argparse
 import json
-from AntShares.Network.RemoteNode import RemoteNode as RN
 
 MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
 
@@ -161,19 +160,16 @@ application = tornado.web.Application([
         ])
 
 def check(monitor = 'both'):
-    dit = {}
-    if 'testnet' == monitor:
-        dit[monitor] = 20332
-    elif 'mainnet' == monitor:
-        dit[monitor] = 10332
-    elif 'both' == monitor:
-        dit['testnet'] = 20332
-        dit['mainnet'] = 10332
-    for k,v in dit.items():
+    assert monitor in ['testnet','mainnet','both'],'Wrong Monitor'
+    netList = []
+    if monitor in ['testnet','both']:
+        netList.append('testnet')
+    if monitor in ['mainnet','both']:
+        netList.append('mainnet')
+    for k in netList:
         h = MC[k].blocks.count()
-        rn = RN('http://seed1.neo.org:%s' % v)
-        rh = rn.getBlockCount()
-        print '%s --> %s vs %s' % (datetime.now(), h,rh)
+        rh = WT.get_last_height(k)
+        print '%s %s --> %s vs %s' % (datetime.now(), k, h,rh)
         if rh - h >= 2:
             print 'will restart %s' % k
             local('supervisorctl restart %s_node' % k)
@@ -188,5 +184,5 @@ if __name__ == "__main__":
         "keyfile": os.path.join(os.path.abspath("."), "HTTPS/https.key"),
         })
     server.listen(PORT)
-    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 500000).start()
+    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 100000).start()
     tornado.ioloop.IOLoop.instance().start()
