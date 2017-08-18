@@ -47,7 +47,7 @@ class MainHandler(CORSHandler):
 
 class BrowserHandler(CORSHandler):
     def get(self,xid):
-        print '%s %s' % (datetime.now(),self.request.path),
+        #print '%s %s' % (datetime.now(),self.request.path),
         db,table = self.request.path.split('/')[1:3]
         if 'block' == table:
             xid = int(xid)
@@ -58,17 +58,17 @@ class BrowserHandler(CORSHandler):
             height = db.blocks.count()
             result = WT.compute_gas(height,result,db)
         if result:
-            print 'True'
+            #print 'True'
             self.write(json.dumps(result))
         else:
-            print 'False'
+            #print 'False'
             self.write(json.dumps({}))
 
 class HeightHandler(CORSHandler):
     def get(self):
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
-        print '%s %s' % (datetime.now(),self.request.path),'True'
+        #print '%s %s' % (datetime.now(),self.request.path),'True'
         self.write(json.dumps({'height':h}))
 
 class TransferHandler(CORSHandler):
@@ -104,7 +104,7 @@ class TransferHandler(CORSHandler):
 
 class GasHandler(CORSHandler):
     def post(self):
-        print '%s %s' % (datetime.now(),self.request.path),
+        #print '%s %s' % (datetime.now(),self.request.path),
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
         publicKey   = self.get_argument('publicKey')
@@ -112,10 +112,10 @@ class GasHandler(CORSHandler):
         claims = db.claims.find_one({'_id':address})
         trans,msg = WT.claim_gas(address,h,claims,db)
         if trans:
-            print 'True'
+            #print 'True'
             self.write(json.dumps({'result':True, 'transaction':trans}))
         else:
-            print 'False'
+            #print 'False'
             self.write(json.dumps({'result':True, 'error':msg}))
 
 class BroadcastHandler(CORSHandler):
@@ -167,12 +167,16 @@ def check(monitor = 'both'):
     if monitor in ['mainnet','both']:
         netList.append('mainnet')
     for k in netList:
+        bc = WT.get_block_count(k) 
         h = MC[k].blocks.count()
         rh = WT.get_last_height(k)
         print '%s %s --> %s vs %s' % (datetime.now(), k, h,rh)
-        if rh - h >= 2:
+        if rh - bc >= 2:
             print 'will restart %s' % k
             local('supervisorctl restart %s_node' % k)
+        if bc - h > 2:
+            print 'will restart %s_sync' % k
+            local('supervisorctl restart %s_sync' % k)
 
 
 if __name__ == "__main__":
@@ -184,5 +188,5 @@ if __name__ == "__main__":
         "keyfile": os.path.join(os.path.abspath("."), "HTTPS/https.key"),
         })
     server.listen(PORT)
-    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 100000).start()
+    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 300000).start()
     tornado.ioloop.IOLoop.instance().start()

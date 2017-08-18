@@ -20,7 +20,18 @@ from config import RPC_NODE,SERVER,PORT
 
 class WalletTool:
     @staticmethod
+    def get_block_count(net):
+        '''获取本地节点的高度'''
+        assert net in ['testnet','mainnet'],'Wrong Net'
+        port = 10332
+        if 'testnet' == net:
+            port = 20332
+        rn = RemoteNode('http://%s:%s' % (RPC_NODE,port))
+        return rn.getBlockCount()
+
+    @staticmethod
     def get_last_height(net):
+        '''从官方节点获取高度'''
         assert net in ['testnet','mainnet'],'Wrong Net'
         netPortDit = {'testnet':'20332','mainnet':'10332'}
         seeds = ['seed'+'%s' % i for i in range(1,6)]
