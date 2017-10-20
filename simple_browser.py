@@ -21,10 +21,24 @@ class CORSHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET')
+    def verify_client(self):
+        arguments = self.get_arguments()
+        sortedKeys = filter(lambda i:i!='paramSign',sorted(arguments.keys()))
+        publicKey = arguments['publicKey']
+        paramSign = arguments['paramSign']
+        paramStr = ''
+        for k in sortedKeys:
+            paramStr += k+self.get_argument(k)
+        if not WT.verify(WT.uncompress_pubkey(publicKey), paramStr, paramSign):
+            msg = 'invalid params signature'
+            print 'False',msg
+            self.write(json.dumps({'result':False,'error':msg}))
+
 
 class MainHandler(CORSHandler):
     def get(self):
         self.write("""<h1>Simple AntShares BlockChain Browser!</h1>
+                      <h3>%s</h3>
                     <ul>
                         <li><strong>GET</strong> /{net}/height</li>
                         <li><strong>GET</strong> /{net}/block/{block}</li>
@@ -43,7 +57,7 @@ class MainHandler(CORSHandler):
                         <li><a href='http://note.youdao.com/noteshare?id=c2b09b4fa26d59898a0f968ccd1652a0'>如何提取ANC/NeoGas</a></li>
                         <li><a href='https://github.com/OTCGO/sync_antshares'>源代码</a></li>
                     </ul>
-                    """)
+                    """ % PUBKEY)
 
 class BrowserHandler(CORSHandler):
     def get(self,xid):
@@ -104,6 +118,7 @@ class TransferHandler(CORSHandler):
 
 class GasHandler(CORSHandler):
     def post(self):
+        self.verify_client()
         #print '%s %s' % (datetime.now(),self.request.path),
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
