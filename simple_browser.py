@@ -22,17 +22,28 @@ class CORSHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, GET')
     def verify_client(self):
-        arguments = self.get_arguments()
+        arguments = self.request.arguments
         sortedKeys = filter(lambda i:i!='paramSign',sorted(arguments.keys()))
-        publicKey = arguments['publicKey']
-        paramSign = arguments['paramSign']
+        publicKey = self.get_argument('publicKey')
+        paramSign = self.get_argument('paramSign')
         paramStr = ''
+        pureStr = ''
         for k in sortedKeys:
-            paramStr += k+self.get_argument(k)
-        if not WT.verify(WT.uncompress_pubkey(publicKey), paramStr, paramSign):
+            paramStr += self.get_argument(k)
+        for c in paramStr:
+            try:
+                cdigit = ord(c)
+            except:
+                continue
+            if 48 <= cdigit <= 57 or 65 <= cdigit <= 90 or 97 <= cdigit <= 122:
+                pureStr += c.lower()
+        if len(pureStr) % 2:
+            pureStr += '0'
+        if not WT.verify(WT.uncompress_pubkey(publicKey), pureStr, paramSign):
             msg = 'invalid params signature'
-            print 'False',msg
             self.write(json.dumps({'result':False,'error':msg}))
+            return False
+        return True
 
 
 class MainHandler(CORSHandler):
@@ -118,7 +129,8 @@ class TransferHandler(CORSHandler):
 
 class GasHandler(CORSHandler):
     def post(self):
-        self.verify_client()
+        if not self.verify_client():
+            return
         #print '%s %s' % (datetime.now(),self.request.path),
         db = MC[self.request.path.split('/')[1]]
         h = db.blocks.count()
