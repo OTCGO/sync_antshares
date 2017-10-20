@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from decimal import Decimal as D
 from WalletTool import WalletTool as WT
-from config import PORT
+from config import PORT,PUBKEY
 import os
 from functools import partial
 from fabric.api import local
