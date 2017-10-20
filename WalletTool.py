@@ -60,7 +60,7 @@ class WalletTool:
         y_hex = '%x' % y
         if (1==int(y_hex[-1],16)%2 and '02' == prefix) or (0==int(y_hex[-1],16)%2 and '03' == prefix):
             y = p - y
-        return '04%x%064x' % (x,y)
+        return '04%064x%064x' % (x,y)
 
     @staticmethod
     def address_to_scripthash(address):
