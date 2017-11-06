@@ -33,15 +33,18 @@ def verification_to_address(verification):
         return scripthash_to_address(redeem_to_scripthash(unhexlify(verification)))
     
 def sync_claim(tr, index):
+    tr['txid'] = tr['txid'][-64:]
     if 'ClaimTransaction' == tr['type']:
         claims = tr['claims']
         addresses = map(verification_to_address,[i['verification'] for i in tr['scripts']])
+        addresses = filter(lambda a:a!='AR4QmqYENiZAD6oXe7ftm6eDcwtHk7rVTT', addresses)
         mongo_claims = []
         for a in addresses:
             ca = DB.claims.find_one({'_id':a})
             assert ca,'sync error: claim %s not exist %s' % (a,tr['txid'])
             mongo_claims.append(ca)
         for c in claims:
+            c['txid'] = c['txid'][-64:]
             startSign = c['txid'] + '_' + str(c['vout'])
             for mc in mongo_claims:
                 if mc.has_key(startSign):
@@ -57,11 +60,14 @@ def sync_claim(tr, index):
             DB.claims.update({'_id':mc['_id']},mc)
         return
     for vi in tr['vin']:
+        vi['txid'] = vi['txid'][-64:]
         t = DB.transactions.find_one({'_id':vi['txid']})
         prevHash = vi['txid']
         prevIndex = vi['vout']
-        asset = t['vout'][prevIndex]['asset']
+        asset = t['vout'][prevIndex]['asset'][-64:]
         address = t['vout'][prevIndex]['address']
+        if 'AR4QmqYENiZAD6oXe7ftm6eDcwtHk7rVTT' == address:
+            continue
         if ANS == asset:
             mongo_claim = DB.claims.find_one({'_id':address})
             startSign = prevHash + '_' + str(prevIndex)
@@ -72,7 +78,10 @@ def sync_claim(tr, index):
             DB.claims.update({'_id':address},mongo_claim)
     for i in xrange(len(tr['vout'])):
         vo = tr['vout'][i]
+        vo['asset'] = vo['asset'][-64:]
         address = vo['address']
+        if 'AR4QmqYENiZAD6oXe7ftm6eDcwtHk7rVTT' == address:
+            continue
         asset = vo['asset']
         value = vo['value']
         if ANS == asset:
@@ -85,11 +94,13 @@ def sync_claim(tr, index):
             print '+'*5,address,'start',index,value,startSign
 
 def sync_address(tr):
+    tr['txid'] = tr['txid'][-64:]
     for vi in tr['vin']:
+        vi['txid'] = vi['txid'][-64:]
         t = DB.transactions.find_one({'_id':vi['txid']})
         prevHash = vi['txid']
         prevIndex = vi['vout']
-        asset = t['vout'][prevIndex]['asset']
+        asset = t['vout'][prevIndex]['asset'][-64:]
         address = t['vout'][prevIndex]['address']
         mongo_address = DB.addresses.find_one({'_id':address})
         for ux in mongo_address['utxo'][asset]:
@@ -101,6 +112,7 @@ def sync_address(tr):
                 break
     for i in xrange(len(tr['vout'])):
         vo = tr['vout'][i]
+        vo['asset'] = vo['asset'][-64:]
         append_element = {'prevHash':tr['txid'],'prevIndex':i,'value':vo['value']}
         mongo_address = DB.addresses.find_one({'_id':vo['address']})
         if mongo_address is not None and mongo_address.has_key('utxo') and mongo_address['utxo'].has_key(vo['asset']) and append_element in mongo_address['utxo'][vo['asset']]:
@@ -120,6 +132,7 @@ def sync_address(tr):
         print '+'*5,vo['address'],vo['asset'],mongo_address['balances'][vo['asset']],'+'*5
 
 def sync_transaction(tr):
+    tr['txid'] = tr['txid'][-64:]
     _id = tr['txid']
     tr['_id'] = _id
     try:
@@ -137,9 +150,9 @@ def sync_block(num):
             break
     mongo_block = {}
     mongo_block['_id'] = num
-    mongo_block['previousblockhash'] = current_block['result']['previousblockhash']
+    mongo_block['previousblockhash'] = current_block['result']['previousblockhash'][-64:]
     mongo_block['index'] = current_block['result']['index']
-    mongo_block['hash'] = current_block['result']['hash']
+    mongo_block['hash'] = current_block['result']['hash'][-64:]
     mongo_block['time'] = current_block['result']['time']
     trs = current_block['result']['tx']
     mongo_block['tx'] = []
@@ -155,7 +168,7 @@ def sync_block(num):
         threads = []
         for j in i:
             sys_fee += D(j['sys_fee']).quantize(D('1'),rounding=ROUND_DOWN)
-            mongo_block['tx'].append(j['txid'])
+            mongo_block['tx'].append(j['txid'][-64:])
             threads.append(gevent.spawn(sync_transaction, j))
         gevent.joinall(threads)
         if num:
