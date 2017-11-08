@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from decimal import Decimal as D
 from WalletTool import WalletTool as WT
-from config import PORT
+from config import PORT,NEP5
 import os
 from functools import partial
 from fabric.api import local
@@ -67,7 +67,10 @@ class BrowserHandler(CORSHandler):
 
 class Nep5Handler(CORSHandler):
     def get(self, address):
-        self.write(json.dumps({'RPX':WT.get_nep5_balance('ecc6b20d3ccac1ee9ef109af5a7cdb85706b1df9',address)}))
+        result = {}
+        for k,v in NEP5.items():
+            result[v] = WT.get_nep5_balance(k,address)
+        self.write(json.dumps(result))
 
 class HeightHandler(CORSHandler):
     def get(self):

@@ -15,13 +15,13 @@ from AntShares.Core.TransactionInput import TransactionInput
 from AntShares.Core.TransactionOutput import TransactionOutput
 from AntShares.Cryptography.Helper import get_privkey_format,decode_privkey,encode_pubkey,fast_multiply,G,redeem_to_scripthash,bin_dbl_sha256,pubkey_to_redeem,redeem_to_scripthash,scripthash_to_address
 from converttool import sci_to_str
-from config import RPC_NODE,SERVER,PORT
+from config import RPC_NODE,SERVER,PORT,NEP5_NODE
 
 
 class WalletTool:
     @classmethod
     def get_nep5_balance(cls, apphash, address):
-        rn = RemoteNode('http://seed1.neo.org:10332')
+        rn = RemoteNode('http://' + NEP5_NODE + ':10332')
         result = rn.getStorage(apphash, cls.address_to_scripthash(address))
         if result['result'] is None:
             return '0'
