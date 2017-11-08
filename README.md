@@ -2,9 +2,8 @@
 同步小蚁区块数据并实时计算UTXO
 
 ### 安装
-1. 本程序引用的 [AntShares](https://github.com/AntSharesSDK/antshares-python/tree/master/sdk/AntShares) 库来自项目 [antshares-python](https://github.com/AntSharesSDK/antshares-python),请将AntShares库置于sync_antshares.py同级目录下或Python系统目录下
-2. 安装MongoDB(v3.4.2,其它版本未经测试，本程序未对MongoDB做任何配置)
-3. 安装其它Python依赖库：
+1. 安装MongoDB(v3.4.2,其它版本未经测试，本程序未对MongoDB做任何配置)
+2. 安装其它Python依赖库：
 ```
 pip install -r requirements.txt
 ```
