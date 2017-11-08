@@ -31,6 +31,7 @@ class MainHandler(CORSHandler):
                         <li><strong>GET</strong> /{net}/transaction/{txid}</li>
                         <li><strong>GET</strong> /{net}/claim/{address}</li>
                         <li><strong>GET</strong> /{net}/address/{address}</li>
+                        <li><strong>GET</strong> /{net}/nep5/{address}</li>
                         <li><strong>POST</strong> /{net}/transfer</li>
                         <li><strong>POST</strong> /{net}/gas</li>
                         <li><strong>POST</strong> /{net}/broadcast</li>
@@ -63,6 +64,10 @@ class BrowserHandler(CORSHandler):
         else:
             #print 'False'
             self.write(json.dumps({}))
+
+class Nep5Handler(CORSHandler):
+    def get(self, address):
+        self.write(json.dumps({'RPX':WT.get_nep5_balance('ecc6b20d3ccac1ee9ef109af5a7cdb85706b1df9',address)}))
 
 class HeightHandler(CORSHandler):
     def get(self):
@@ -143,6 +148,8 @@ application = tornado.web.Application([
         (r'/', MainHandler),
         (r'/testnet/address/(\w{33,34})', BrowserHandler),
         (r'/mainnet/address/(\w{33,34})', BrowserHandler),
+        (r'/testnet/nep5/(\w{33,34})', Nep5Handler),
+        (r'/mainnet/nep5/(\w{33,34})', Nep5Handler),
         (r'/testnet/claim/(\w{33,34})', BrowserHandler),
         (r'/mainnet/claim/(\w{33,34})', BrowserHandler),
         (r'/testnet/transaction/(\w{64})', BrowserHandler),

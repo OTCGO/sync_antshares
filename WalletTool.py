@@ -19,6 +19,15 @@ from config import RPC_NODE,SERVER,PORT
 
 
 class WalletTool:
+    @classmethod
+    def get_nep5_balance(cls, apphash, address):
+        rn = RemoteNode('http://seed1.neo.org:10332')
+        result = rn.getStorage(apphash, cls.address_to_scripthash(address))
+        if result['result'] is None:
+            return '0'
+        else:
+            return Fixed8.getNumStr(result['result'])
+
     @staticmethod
     def get_block_count(net):
         '''获取本地节点的高度'''
