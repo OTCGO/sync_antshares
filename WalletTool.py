@@ -22,16 +22,23 @@ from random import randint
 class WalletTool:
     @staticmethod
     def get_random_byte():
+        '''
+        获得单个16进制字符串
+        '''
         return binascii.hexlify(chr(randint(0,255)))
+
     @classmethod
     def get_random_byte_str(cls, num):
         '''
         获得指定长度的16进制字符串
         '''
         return ''.join([cls.get_random_byte() for i in xrange(0,num)])
+
     @classmethod
     def transfer_nep5(cls,apphash,source,dest,value):
-
+        '''
+        构建NEP5代币转账InvocationTransaction
+        '''
         s = 'd101'
         script = ''
         fa = Fixed8(value).getDataFree()
@@ -42,7 +49,6 @@ class WalletTool:
         scriptLen = hex(len(script)/2)[2:]
         if 1 == len(scriptLen) % 2:
             scriptLen = '0' + scriptLen
-        #s += scriptLen + script + '0000000000000000' + '01f10a' + cls.get_random_byte_str(10) + '0000'
         s += scriptLen + script + '0000000000000000' + '0120' + cls.address_to_scripthash(source) + '0000'
         return s
 
