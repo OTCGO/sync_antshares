@@ -16,9 +16,36 @@ from AntShares.Core.TransactionOutput import TransactionOutput
 from AntShares.Cryptography.Helper import get_privkey_format,decode_privkey,encode_pubkey,fast_multiply,G,redeem_to_scripthash,bin_dbl_sha256,pubkey_to_redeem,redeem_to_scripthash,scripthash_to_address
 from converttool import sci_to_str
 from config import RPC_NODE,SERVER,PORT,NEP5_NODE
+from random import randint
 
 
 class WalletTool:
+    @staticmethod
+    def get_random_byte():
+        return binascii.hexlify(chr(randint(0,255)))
+    @classmethod
+    def get_random_byte_str(cls, num):
+        '''
+        获得指定长度的16进制字符串
+        '''
+        return ''.join([cls.get_random_byte() for i in xrange(0,num)])
+    @classmethod
+    def transfer_nep5(cls,apphash,source,dest,value):
+
+        s = 'd101'
+        script = ''
+        fa = Fixed8(value).getDataFree()
+        faLen = hex(len(fa)/2)[2:]
+        if 1 == len(faLen) % 2:
+            faLen = '0' + faLen
+        script += faLen + fa + '14' + cls.address_to_scripthash(dest) + '14' + cls.address_to_scripthash(source) + '53c1087472616e7366657267' + big_or_little(apphash) + 'f166' + cls.get_random_byte_str(8)
+        scriptLen = hex(len(script)/2)[2:]
+        if 1 == len(scriptLen) % 2:
+            scriptLen = '0' + scriptLen
+        #s += scriptLen + script + '0000000000000000' + '01f10a' + cls.get_random_byte_str(10) + '0000'
+        s += scriptLen + script + '0000000000000000' + '0120' + cls.address_to_scripthash(source) + '0000'
+        return s
+
     @classmethod
     def get_nep5_balance(cls, apphash, address):
         rn = RemoteNode('http://' + NEP5_NODE + ':10332')

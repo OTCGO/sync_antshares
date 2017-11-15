@@ -93,22 +93,32 @@ class TransferHandler(CORSHandler):
             print 'False',msg
             self.write(json.dumps({'result':False,'error':msg}))
         else:
-            items = zip(dests,amounts)
-            addressInfo = MC[db]['addresses'].find_one({'_id':source})
-            if not addressInfo:
-                msg = 'invalid source'
-                print 'False',msg
-                self.write(json.dumps({'result':False,'error':msg}))
-            else:
-                if sum(amounts) > WT.get_asset_balance(addressInfo, assetId):
-                    msg = 'poor balance'
+            if 40 == len(assetId):
+                if 1 != len(dests):
+                    msg = 'wrong dests'
                     print 'False',msg
                     self.write(json.dumps({'result':False,'error':msg}))
                 else:
-                    inputs,outputs = WT.transfer(addressInfo, items, assetId)
-                    trans,txid = WT.generate_unsignature_transaction(inputs, outputs)
+                    trans = WT.transfer_nep5(assetId, source, dests[0], amounts[0])
                     print 'True'
                     self.write(json.dumps({'result':True, 'transaction':trans}))
+            else:
+                items = zip(dests,amounts)
+                addressInfo = MC[db]['addresses'].find_one({'_id':source})
+                if not addressInfo:
+                    msg = 'invalid source'
+                    print 'False',msg
+                    self.write(json.dumps({'result':False,'error':msg}))
+                else:
+                    if sum(amounts) > WT.get_asset_balance(addressInfo, assetId):
+                        msg = 'poor balance'
+                        print 'False',msg
+                        self.write(json.dumps({'result':False,'error':msg}))
+                    else:
+                        inputs,outputs = WT.transfer(addressInfo, items, assetId)
+                        trans,txid = WT.generate_unsignature_transaction(inputs, outputs)
+                        print 'True'
+                        self.write(json.dumps({'result':True, 'transaction':trans}))
 
 class GasHandler(CORSHandler):
     def post(self):
