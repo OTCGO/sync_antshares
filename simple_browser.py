@@ -6,13 +6,16 @@ from pymongo import MongoClient
 from datetime import datetime
 from decimal import Decimal as D
 from WalletTool import WalletTool as WT
-from config import PORT,NEP5
+from config import PORT
 import os
 from functools import partial
 from fabric.api import local
 import argparse
 import json
 
+NEP5 = {
+        'ecc6b20d3ccac1ee9ef109af5a7cdb85706b1df9':'RPX',
+        }
 MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
 
 
@@ -54,23 +57,18 @@ class BrowserHandler(CORSHandler):
             xid = int(xid)
         dbTable = MC[db][table+'s'] if table!='address' else MC[db][table+'es']
         result = dbTable.find_one({'_id':xid})
-        if result and 'claim' == table:
-            db = MC[db]
-            height = db.blocks.count()
-            result = WT.compute_gas(height,result,db)
         if result:
-            #print 'True'
+            if 'claim' == table:
+                db = MC[db]
+                height = db.blocks.count()
+                result = WT.compute_gas(height,result,db)
+            if 'address' == table:
+                for k in NEP5:
+                    result['balances'][k] = WT.get_nep5_balance(k,xid)
             self.write(json.dumps(result))
         else:
             #print 'False'
             self.write(json.dumps({}))
-
-class Nep5Handler(CORSHandler):
-    def get(self, address):
-        result = {}
-        for k,v in NEP5.items():
-            result[v] = WT.get_nep5_balance(k,address)
-        self.write(json.dumps(result))
 
 class HeightHandler(CORSHandler):
     def get(self):
@@ -161,8 +159,6 @@ application = tornado.web.Application([
         (r'/', MainHandler),
         (r'/testnet/address/(\w{33,34})', BrowserHandler),
         (r'/mainnet/address/(\w{33,34})', BrowserHandler),
-        (r'/testnet/nep5/(\w{33,34})', Nep5Handler),
-        (r'/mainnet/nep5/(\w{33,34})', Nep5Handler),
         (r'/testnet/claim/(\w{33,34})', BrowserHandler),
         (r'/mainnet/claim/(\w{33,34})', BrowserHandler),
         (r'/testnet/transaction/(\w{64})', BrowserHandler),
