@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from decimal import Decimal as D
 from WalletTool import WalletTool as WT
-from config import PORT
+from config import PORT,RPC_NODE
 import os
 from functools import partial
 from fabric.api import local
@@ -146,12 +146,13 @@ class BroadcastHandler(CORSHandler):
         transaction = self.get_argument('transaction')
         signature   = self.get_argument('signature')
         publicKey   = self.get_argument('publicKey')
+        node        = self.get_argument('node', RPC_NODE)
         if not WT.verify(WT.uncompress_pubkey(publicKey), transaction, signature):
             msg = 'invalid signature'
             print 'False',msg
             self.write(json.dumps({'result':False,'error':msg}))
         regtx = transaction + '014140' + signature + '2321' + publicKey + 'ac'
-        result, msg = WT.send_transaction_to_node(regtx, transaction, net)
+        result, msg = WT.send_transaction_to_node(regtx, transaction, net, node)
         if result:
             print 'True'
             self.write(json.dumps({'result':True,'txid':msg}))
