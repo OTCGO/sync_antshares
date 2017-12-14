@@ -15,8 +15,10 @@ import json
 
 NEP5 = {
         'ecc6b20d3ccac1ee9ef109af5a7cdb85706b1df9':'RPX',
+        '6d36b38af912ca107f55a5daedc650054f7e4f75':'APH',
+        'a0777c3ce2b169d4a23bcba4565e3225a0122d95':'APH',
         }
-MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=50)
+MC = MongoClient('mongodb://127.0.0.1:27017', maxPoolSize=500)
 
 
 class CORSHandler(tornado.web.RequestHandler):
@@ -34,7 +36,6 @@ class MainHandler(CORSHandler):
                         <li><strong>GET</strong> /{net}/transaction/{txid}</li>
                         <li><strong>GET</strong> /{net}/claim/{address}</li>
                         <li><strong>GET</strong> /{net}/address/{address}</li>
-                        <li><strong>GET</strong> /{net}/nep5/{address}</li>
                         <li><strong>POST</strong> /{net}/transfer</li>
                         <li><strong>POST</strong> /{net}/gas</li>
                         <li><strong>POST</strong> /{net}/broadcast</li>
@@ -62,13 +63,17 @@ class BrowserHandler(CORSHandler):
                 db = MC[db]
                 height = db.blocks.count()
                 result = WT.compute_gas(height,result,db)
-            if 'address' == table:
+            if 'address' == table and 'mainnet' == db:
                 for k in NEP5:
                     result['balances'][k] = WT.get_nep5_balance(k,xid)
-            self.write(json.dumps(result))
         else:
             #print 'False'
-            self.write(json.dumps({}))
+            if 'address' == table and 'mainnet' == db:
+                result = {'utxo':{},"_id":xid,'balances':{}}
+                for k in NEP5:
+                    v = WT.get_nep5_balance(k,xid)
+                    result['balances'][k] = v
+        self.write(json.dumps(result))
 
 class HeightHandler(CORSHandler):
     def get(self):
@@ -204,5 +209,5 @@ if __name__ == "__main__":
         "keyfile": os.path.join(os.path.abspath("."), "HTTPS/https.key"),
         })
     server.listen(PORT)
-    tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 300000).start()
+    #tornado.ioloop.PeriodicCallback(partial(check, monitor=args.monitor), 300000).start()
     tornado.ioloop.IOLoop.instance().start()
